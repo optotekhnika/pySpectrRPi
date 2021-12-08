@@ -8,12 +8,7 @@ import serial.tools.list_ports
 import json
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from matplotlib.lines import Line2D
 import numpy as np
-
-
-def print_hi(name):
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
 
 class PiCom:
@@ -41,6 +36,8 @@ class PiCom:
         self.on = False
         if self.serialport:
             self.serialport.close()
+            self.thread_loop.join()
+            self.serialport = None
 
     def __listen_loop(self):
         self.post_info("Start loop!")
@@ -65,7 +62,6 @@ class PiCom:
                 print("Type error on port")
             except JSONDecodeError:
                 print("Json error: " + bts)
-        self.post_info("Exit read serial port loop")
 
     def ask_data(self):
         self.serialport.write("{\"cmd\":\"getline\"}\r\n".encode())
@@ -76,6 +72,11 @@ class PiCom:
 
     def stop(self):
         self.update = False
+
+    def set_time(self, time):
+        self.serialport.write("{\"cmd\":\"settime\", \"time\":".encode())
+        self.serialport.write(str(time).encode())
+        self.serialport.write("}\r\n".encode())
 
 
 class SpectrWnd:
@@ -114,6 +115,12 @@ class SpectrWnd:
 
         self.btnStop = tk.Button(self.frame_control, text="Stop", command=self.clicked_stop)
         self.btnStop.grid(column=5, row=0, padx=4, pady=2)
+
+        self.btnTime = tk.Button(self.frame_control, text="Time", command=self.clicked_time)
+        self.btnTime.grid(column=6, row=0, padx=4, pady=2)
+
+        self.entTime = tk.Entry(self.frame_control)
+        self.entTime.grid(column=7, row=0, padx=4, pady=2)
 
         self.frame_info = tk.Frame(master=self.window, highlightthickness=1, highlightbackground="blue")
         self.frame_info.grid(row=1, column=0, sticky="nsew")
@@ -156,6 +163,7 @@ class SpectrWnd:
         if self.picom:
             self.picom.close()
             self.picom = None
+            self.info.delete("1.0", END)
 
     def clicked_start(self):
         if self.picom:
@@ -166,6 +174,10 @@ class SpectrWnd:
     def clicked_stop(self):
         if self.picom:
             self.picom.stop()
+
+    def clicked_time(self):
+        if self.picom:
+            self.picom.set_time(self.entTime.get())
 
     def loop(self):
         self.window.mainloop()
@@ -212,8 +224,6 @@ class SpectrWnd:
 
 
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
     spw = SpectrWnd()
     spw.loop()
     spw.closed()
