@@ -24,6 +24,7 @@ import tkinter as tk
 from pycom import PiCom
 import frames as fr
 import plotwnd as pw
+import plotlistwnd as pl
 
 
 class SpectrWnd(tk.Tk):
@@ -45,12 +46,16 @@ class SpectrWnd(tk.Tk):
         self.frame_base.grid_rowconfigure(0, weight=1)
         self.frame_base.grid_columnconfigure(0, weight=0)
         self.frame_base.grid_columnconfigure(1, weight=1)
+        self.frame_base.grid_columnconfigure(2, weight=0)
 
         self.frame_info = fr.InfoFrame(self.frame_base)
         self.frame_info.grid(row=0, column=0, sticky="nsew")
 
         self.frame_plot = pw.PlotFrame(self.frame_base)
         self.frame_plot.grid(row=0, column=1, sticky="nsew")
+
+        self.frame_pl = pl.PlotListWnd(self.frame_base)
+        self.frame_pl.grid(row=0, column=2, sticky="nsew")
 
     def list_ports(self):
         return PiCom.list_ports()
