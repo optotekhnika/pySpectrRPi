@@ -23,7 +23,17 @@ SOFTWARE.
 import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+import matplotlib.colors as mc
 import numpy as np
+
+
+def scale(data):
+    l = min(data)
+    h = max(data)
+    d = (h - l) / 8
+    l = l - d
+    h = h + d
+    return l, h
 
 
 class PlotFrame(tk.Frame):
@@ -75,16 +85,28 @@ class PlotFrame(tk.Frame):
     def start_plot(self):
         t = np.arange(1, 256, 1)
         self.line = self.aplot.plot(t, 40000 * np.sin(2 * np.pi * t))[-1]
+        return self.line, mc.to_hex(self.line.get_color())
 
     def update_plot(self, data):
         if self.line:
             self.line.set_data(range(0, len(data)), data)
             if self.autoscale:
-                l = min(data)
-                h = max(data)
-                d = (h - l) / 8
-                l = l - d
-                h = h + d
+                l, h = scale(data)
                 self.aplot.set_ylim([l, h])
                 self.autoscale = False
+        self.canvas.draw()
+
+    def expand_plot(self, line):
+        x, y = line.get_data()
+        l, h = scale(y)
+        self.aplot.set_ylim([l, h])
+        l, h = scale(x)
+        self.aplot.set_xlim([l, h])
+        self.canvas.draw()
+
+    def hide_plot(self, plot, hide):
+        if hide:
+            plot.set_linestyle("None")
+        else:
+            plot.set_linestyle("solid")
         self.canvas.draw()

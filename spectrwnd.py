@@ -54,7 +54,7 @@ class SpectrWnd(tk.Tk):
         self.frame_plot = pw.PlotFrame(self.frame_base)
         self.frame_plot.grid(row=0, column=1, sticky="nsew")
 
-        self.frame_pl = pl.PlotListWnd(self.frame_base)
+        self.frame_pl = pl.PlotListWnd(self.frame_base, self.frame_plot)
         self.frame_pl.grid(row=0, column=2, sticky="nsew")
 
     def list_ports(self):
@@ -72,7 +72,8 @@ class SpectrWnd(tk.Tk):
     def clicked_start(self):
         if self.picom:
             self.picom.start()
-            self.frame_plot.start_plot()
+            line, color = self.frame_plot.start_plot()
+            self.frame_pl.add_plot(line, color)
 
     def clicked_stop(self):
         if self.picom:

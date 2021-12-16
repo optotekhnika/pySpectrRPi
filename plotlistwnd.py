@@ -24,38 +24,50 @@ import tkinter as tk
 
 
 class PlotElement(tk.Frame):
-    def __init__(self, mainwnd, r_var, val):
-        super().__init__(mainwnd, highlightthickness=1, highlightbackground="blue")
+    def __init__(self, masterFrame, spwnd, r_var, val, comment, color, plot):
+        super().__init__(masterFrame, highlightthickness=1, highlightbackground="blue")
+
+        self.color = color
+        self.is_hidden = False
+        self.spwnd = spwnd
+        self.plot = plot
+
+        self.btnHide = tk.Button(self, text=" ", command=self.hide, bg=color, activebackground=color)
+        self.btnHide.grid(column=0, row=0, padx=4, pady=4)
 
         self.rad = tk.Radiobutton(self, variable=r_var, value=val)
-        self.rad.grid(column=0, row=0)
+        self.rad.grid(column=1, row=0)
 
-        self.lbl = tk.Label(self, text="Plot 1")
-        self.lbl.grid(column=1, row=0, padx=4)
+        self.lbl = tk.Label(self, text=comment)
+        self.lbl.grid(column=2, row=0, padx=4)
 
-        self.btnOpen = tk.Button(self, text="X", command=self.expand)
-        self.btnOpen.grid(column=2, row=0, padx=4)
+        self.btnExpand = tk.Button(self, text="X", command=self.expand)
+        self.btnExpand.grid(column=3, row=0, padx=4, pady=4)
 
     def expand(self):
-        None
+        if not self.is_hidden:
+            self.spwnd.expand_plot(self.plot)
+
+    def hide(self):
+        if self.is_hidden:
+            self.btnHide.config(bg=self.color, activebackground=self.color)
+        else:
+            self.btnHide.config(bg='white', activebackground='white')
+        self.is_hidden = not self.is_hidden
+        self.spwnd.hide_plot(self.plot, self.is_hidden)
 
 
 class PlotListWnd(tk.Frame):
-    def __init__(self, mainwnd):
-        super().__init__(mainwnd, highlightthickness=1, highlightbackground="blue")
+    def __init__(self, mainframe, spwnd):
+        super().__init__(mainframe, highlightthickness=1, highlightbackground="blue")
+        self.spwnd = spwnd
         self.list = []
 
         self.r_var = tk.IntVar()
 
-        p1 = PlotElement(self, self.r_var, 0)
-        p1.grid(column=0, row=0)
-        self.list.append(p1)
-        p2 = PlotElement(self, self.r_var, 1)
-        p2.grid(column=0, row=1)
-        self.list.append(p2)
-        p3 = PlotElement(self, self.r_var, 2)
-        p3.grid(column=0, row=2)
-        self.list.append(p3)
-
-        self.r_var.set(1)
-
+    def add_plot(self, plot, color):
+        r = len(self.list)
+        p = PlotElement(self, self.spwnd, self.r_var, r, comment="Plot", color=color, plot=plot)
+        p.grid(column=0, row=r)
+        self.r_var.set(r)
+        self.list.append(p)
