@@ -26,7 +26,7 @@ import h5py
 
 class PlotElement(tk.Frame):
     def __init__(self, masterFrame, spwnd, r_var, val, comment, color, plot):
-        super().__init__(masterFrame, highlightthickness=1, highlightbackground="blue")
+        super().__init__(masterFrame.frame, highlightthickness=1, highlightbackground="blue")
 
         self.color = color
         self.is_hidden = False
@@ -79,10 +79,24 @@ class PlotElement(tk.Frame):
 class PlotListWnd(tk.Frame):
     def __init__(self, mainframe, spwnd):
         super().__init__(mainframe, highlightthickness=1, highlightbackground="blue")
+
         self.spwnd = spwnd
         self.list = []
-
         self.r_var = tk.IntVar()
+
+        self.canvas = tk.Canvas(self, borderwidth=0, background="#ffffff")
+        self.frame = tk.Frame(self.canvas, background="#ffffff")
+        self.vsb = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.vsb.set)
+
+        self.vsb.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.canvas.create_window((4, 4), window=self.frame, anchor="nw", tags="self.frame")
+
+        self.frame.bind("<Configure>", self.on_frame_configure)
+
+    def on_frame_configure(self, event):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"), width=self.frame.winfo_width())
 
     def add_plot(self, plot, color):
         r = len(self.list)
