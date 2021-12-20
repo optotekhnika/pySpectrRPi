@@ -113,5 +113,9 @@ class PlotFrame(tk.Frame):
             plot.set_linestyle("solid")
         self.canvas.draw()
 
+    def del_plot(self, line):
+        self.aplot.lines.remove(line)
+        self.canvas.draw()
+
     def xy_plot(self, plot):
         return plot.get_data()

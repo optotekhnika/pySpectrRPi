@@ -32,6 +32,7 @@ class PlotElement(tk.Frame):
         self.is_hidden = False
         self.spwnd = spwnd
         self.plot = plot
+        self.masterFrame = masterFrame
 
         self.btnHide = tk.Button(self, text=" ", command=self.hide, bg=color, activebackground=color)
         self.btnHide.grid(column=0, row=0, padx=4, pady=4)
@@ -41,9 +42,16 @@ class PlotElement(tk.Frame):
 
         self.lbl = tk.Label(self, text=comment)
         self.lbl.grid(column=2, row=0, padx=4)
+        self.lbl.bind("<Button-3>", self.popup_menu)
 
         self.btnExpand = tk.Button(self, text="X", command=self.expand)
         self.btnExpand.grid(column=3, row=0, padx=4, pady=4)
+
+        self.menu = tk.Menu(self, tearoff=0)
+        self.menu.add_command(label="Expand", command=self.expand)
+        self.menu.add_command(label="Hide", command=self.hide)
+        self.menu.add_command(label="Comment", command=self.menu_comment)
+        self.menu.add_command(label="Delete", command=self.menu_delete)
 
     def expand(self):
         if not self.is_hidden:
@@ -56,6 +64,16 @@ class PlotElement(tk.Frame):
             self.btnHide.config(bg='white', activebackground='white')
         self.is_hidden = not self.is_hidden
         self.spwnd.hide_plot(self.plot, self.is_hidden)
+
+    def menu_comment(self):
+        print("comment")
+
+    def menu_delete(self):
+        self.grid_forget()
+        self.masterFrame.delete(self)
+
+    def popup_menu(self, event):
+        self.menu.tk_popup(event.x_root, event.y_root, 0)
 
 
 class PlotListWnd(tk.Frame):
@@ -72,6 +90,10 @@ class PlotListWnd(tk.Frame):
         p.grid(column=0, row=r)
         self.r_var.set(r)
         self.list.append(p)
+
+    def delete(self, pl):
+        self.list.remove(pl)
+        self.spwnd.del_plot(pl.plot)
 
     def save(self):
         n = len(self.list)
