@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 import tkinter as tk
+import h5py
 
 
 class PlotElement(tk.Frame):
@@ -71,3 +72,20 @@ class PlotListWnd(tk.Frame):
         p.grid(column=0, row=r)
         self.r_var.set(r)
         self.list.append(p)
+
+    def save(self):
+        n = len(self.list)
+        with h5py.File("spw.hdf5", "w") as f:
+            gs = f.create_group("single")
+            ds = gs.create_dataset("ds", (n, 2, 256))
+            for i in range(n):
+                x, y = self.spwnd.xy_plot(self.list[i].plot)
+                ds[i, 0, ] = x
+                ds[i, 1, ] = y
+
+    def restore(self):
+        with h5py.File("spw.hdf5", "r") as f:
+            ds = f["single/ds"]
+            for pl in ds:
+                p, c = self.spwnd.add_plot(pl[0], pl[1])
+                self.add_plot(p, c)

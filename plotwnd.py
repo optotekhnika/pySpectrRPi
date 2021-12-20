@@ -74,9 +74,7 @@ class PlotFrame(tk.Frame):
     def clicked_shrink(self):
         l, h = self.aplot.get_ylim()
         d = (h - l) / 8
-        l = l + d
-        h = h - d
-        self.aplot.set_ylim([l, h])
+        self.aplot.set_ylim([l + d, h - d])
         self.canvas.draw()
 
     def clicked_ascale(self):
@@ -85,6 +83,10 @@ class PlotFrame(tk.Frame):
     def start_plot(self):
         t = np.arange(1, 256, 1)
         self.line = self.aplot.plot(t, 40000 * np.sin(2 * np.pi * t))[-1]
+        return self.line, mc.to_hex(self.line.get_color())
+
+    def add_plot(self, x, y):
+        self.line = self.aplot.plot(x, y)[-1]
         return self.line, mc.to_hex(self.line.get_color())
 
     def update_plot(self, data):
@@ -110,3 +112,6 @@ class PlotFrame(tk.Frame):
         else:
             plot.set_linestyle("solid")
         self.canvas.draw()
+
+    def xy_plot(self, plot):
+        return plot.get_data()

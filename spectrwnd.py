@@ -56,6 +56,7 @@ class SpectrWnd(tk.Tk):
 
         self.frame_pl = pl.PlotListWnd(self.frame_base, self.frame_plot)
         self.frame_pl.grid(row=0, column=2, sticky="nsew")
+        self.frame_pl.restore()
 
     def list_ports(self):
         return PiCom.list_ports()
@@ -87,6 +88,7 @@ class SpectrWnd(tk.Tk):
         self.mainloop()
 
     def closed(self):
+        self.frame_pl.save()
         if self.picom:
             self.picom.close()
 
