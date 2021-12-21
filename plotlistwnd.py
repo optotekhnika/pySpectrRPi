@@ -22,7 +22,6 @@ SOFTWARE.
 
 import tkinter as tk
 from tkinter import simpledialog
-import h5py
 import tables as pt
 
 
@@ -37,24 +36,30 @@ class PlotElement(tk.Frame):
         self.masterFrame = masterFrame
         self.comment = comment
 
+        self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure(1, weight=0)
+        self.grid_columnconfigure(2, weight=1)
+        self.grid_columnconfigure(3, weight=0)
+
         self.btnHide = tk.Button(self, text=" ", command=self.hide, bg=color, activebackground=color)
-        self.btnHide.grid(column=0, row=0, padx=4, pady=4)
+        self.btnHide.grid(column=0, row=0, padx=4, pady=0, sticky="ew")
 
         self.rad = tk.Radiobutton(self, variable=r_var, value=val)
-        self.rad.grid(column=1, row=0)
+        self.rad.grid(column=1, row=0, sticky="ew")
 
         self.lbl = tk.Label(self, text=comment)
-        self.lbl.grid(column=2, row=0, padx=4)
+        self.lbl.grid(column=2, row=0, padx=4, sticky="ew")
         self.lbl.bind("<Button-3>", self.popup_menu)
 
         self.btnExpand = tk.Button(self, text="X", command=self.expand)
-        self.btnExpand.grid(column=3, row=0, padx=4, pady=4)
+        self.btnExpand.grid(column=3, row=0, padx=4, pady=0, sticky="ew")
 
         self.menu = tk.Menu(self, tearoff=0)
         self.menu.add_command(label="Expand", command=self.expand)
         self.menu.add_command(label="Hide", command=self.hide)
         self.menu.add_command(label="Comment", command=self.menu_comment)
         self.menu.add_command(label="Delete", command=self.menu_delete)
+        self.menu.add_command(label="Export", command=self.menu_export)
 
     def expand(self):
         if not self.is_hidden:
@@ -77,6 +82,9 @@ class PlotElement(tk.Frame):
     def menu_delete(self):
         self.grid_forget()
         self.masterFrame.delete(self)
+
+    def menu_export(self):
+        print("export")
 
     def popup_menu(self, event):
         self.menu.tk_popup(event.x_root, event.y_root, 0)
@@ -113,7 +121,7 @@ class PlotListWnd(tk.Frame):
     def add_plot(self, plot, color, comment="Plot",):
         r = len(self.list)
         p = PlotElement(self, self.spwnd, self.r_var, r, comment=comment, color=color, plot=plot)
-        p.grid(column=0, row=r)
+        p.grid(column=0, row=r, sticky="ew")
         self.r_var.set(r)
         self.list.append(p)
 
