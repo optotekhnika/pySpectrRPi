@@ -21,7 +21,9 @@ SOFTWARE.
 """
 
 import tkinter as tk
+from tkinter import simpledialog
 import h5py
+import tables as pt
 
 
 class PlotElement(tk.Frame):
@@ -33,6 +35,7 @@ class PlotElement(tk.Frame):
         self.spwnd = spwnd
         self.plot = plot
         self.masterFrame = masterFrame
+        self.comment = comment
 
         self.btnHide = tk.Button(self, text=" ", command=self.hide, bg=color, activebackground=color)
         self.btnHide.grid(column=0, row=0, padx=4, pady=4)
@@ -66,7 +69,10 @@ class PlotElement(tk.Frame):
         self.spwnd.hide_plot(self.plot, self.is_hidden)
 
     def menu_comment(self):
-        print("comment")
+        comment = simpledialog.askstring("Comment", "Commentary", parent=self.masterFrame, initialvalue=self.comment)
+        if comment:
+            self.comment = comment
+            self.lbl['text'] = comment
 
     def menu_delete(self):
         self.grid_forget()
@@ -74,6 +80,12 @@ class PlotElement(tk.Frame):
 
     def popup_menu(self, event):
         self.menu.tk_popup(event.x_root, event.y_root, 0)
+
+
+class TableRow(pt.IsDescription):
+    comment = pt.StringCol(128)
+    x = pt.Int32Col(256)
+    y = pt.Int32Col(256)
 
 
 class PlotListWnd(tk.Frame):
@@ -98,9 +110,9 @@ class PlotListWnd(tk.Frame):
     def on_frame_configure(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"), width=self.frame.winfo_width())
 
-    def add_plot(self, plot, color):
+    def add_plot(self, plot, color, comment="Plot",):
         r = len(self.list)
-        p = PlotElement(self, self.spwnd, self.r_var, r, comment="Plot", color=color, plot=plot)
+        p = PlotElement(self, self.spwnd, self.r_var, r, comment=comment, color=color, plot=plot)
         p.grid(column=0, row=r)
         self.r_var.set(r)
         self.list.append(p)
@@ -111,17 +123,24 @@ class PlotListWnd(tk.Frame):
 
     def save(self):
         n = len(self.list)
-        with h5py.File("spw.hdf5", "w") as f:
-            gs = f.create_group("single")
-            ds = gs.create_dataset("ds", (n, 2, 256))
-            for i in range(n):
-                x, y = self.spwnd.xy_plot(self.list[i].plot)
-                ds[i, 0, ] = x
-                ds[i, 1, ] = y
+        h5file = pt.open_file("spw.h5", mode="w", title="spectrum")
+        group = h5file.create_group("/", "simple", "Single spectrum")
+        table = h5file.create_table(group, "sp", TableRow, "spectrum")
+        sprow = table.row
+        for i in range(n):
+            x, y = self.spwnd.xy_plot(self.list[i].plot)
+            sprow['x'] = x
+            sprow['y'] = y
+            sprow['comment'] = self.list[i].comment
+            sprow.append()
+        table.flush()
+        h5file.close()
 
     def restore(self):
-        with h5py.File("spw.hdf5", "r") as f:
-            ds = f["single/ds"]
-            for pl in ds:
-                p, c = self.spwnd.add_plot(pl[0], pl[1])
-                self.add_plot(p, c)
+        h5file = pt.open_file("spw.h5", mode="r", title="spectrum")
+        table = h5file.root.simple.sp
+        for pl in table.iterrows():
+            p, c = self.spwnd.add_plot(pl['x'], pl['y'])
+            self.add_plot(p, c, pl['comment'])
+        h5file.close()
+

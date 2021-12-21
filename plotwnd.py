@@ -81,7 +81,7 @@ class PlotFrame(tk.Frame):
         self.autoscale = True
 
     def start_plot(self):
-        t = np.arange(1, 256, 1)
+        t = np.arange(0, 256, 1)
         self.line = self.aplot.plot(t, 40000 * np.sin(2 * np.pi * t))[-1]
         return self.line, mc.to_hex(self.line.get_color())
 
