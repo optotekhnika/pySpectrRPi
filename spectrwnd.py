@@ -62,8 +62,7 @@ class SpectrWnd(tk.Tk):
         self.info_queue = queue.Queue()
         self.data_queue = queue.Queue()
 
-        root = tk.Tk()
-        root.bin('<<MessageInfo>>', self.do_append_info)
+        self.bind('<<MessageInfo>>', self.do_append_info)
 
     def list_ports(self):
         return PiCom.list_ports()
@@ -99,9 +98,9 @@ class SpectrWnd(tk.Tk):
         if self.picom:
             self.picom.close()
 
-    def do_append_info(self):
-#        txt = self.info_queue.get()
-        self.frame_info.append_info("txt" + '\n')
+    def do_append_info(self, e):
+        txt = self.info_queue.get()
+        self.frame_info.append_info(txt + '\n')
 
     def append_info(self, txt):
         self.info_queue.put(txt)
