@@ -25,6 +25,7 @@ from pycom import PiCom
 import frames as fr
 import plotwnd as pw
 import plotlistwnd as pl
+import queue
 
 
 class SpectrWnd(tk.Tk):
@@ -57,6 +58,12 @@ class SpectrWnd(tk.Tk):
         self.frame_pl = pl.PlotListWnd(self.frame_base, self.frame_plot)
         self.frame_pl.grid(row=0, column=2, sticky="nsew")
         self.frame_pl.restore()
+
+        self.info_queue = queue.Queue()
+        self.data_queue = queue.Queue()
+
+        root = tk.Tk()
+        root.bin('<<MessageInfo>>', self.do_append_info)
 
     def list_ports(self):
         return PiCom.list_ports()
@@ -92,8 +99,13 @@ class SpectrWnd(tk.Tk):
         if self.picom:
             self.picom.close()
 
+    def do_append_info(self):
+#        txt = self.info_queue.get()
+        self.frame_info.append_info("txt" + '\n')
+
     def append_info(self, txt):
-        self.frame_info.append_info(txt + '\n')
+        self.info_queue.put(txt)
+        self.event_generate('<<MessageInfo>>')
 
     def update_plot(self, data):
         self.frame_info.append_info("Data " + str(len(data)) + '\n')
