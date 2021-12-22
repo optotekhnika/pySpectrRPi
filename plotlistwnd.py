@@ -22,6 +22,9 @@ SOFTWARE.
 
 import tkinter as tk
 from tkinter import simpledialog
+from tkinter import filedialog
+
+import numpy as np
 import tables as pt
 
 
@@ -84,7 +87,10 @@ class PlotElement(tk.Frame):
         self.masterFrame.delete(self)
 
     def menu_export(self):
-        print("export")
+        f = filedialog.asksaveasfilename(parent=self, defaultextension=".csv", )
+        if f:
+            x, y = self.spwnd.xy_plot(self.plot)
+            np.savetxt(f, (x, y), delimiter=',')
 
     def popup_menu(self, event):
         self.menu.tk_popup(event.x_root, event.y_root, 0)
