@@ -28,12 +28,11 @@ import json
 
 
 class PiCom:
-    def __init__(self, port_name, post_info, post_plot):
+    def __init__(self, port_name, wnd):
         self.serialport = Serial(port_name, 115200, parity=serial.PARITY_NONE,
                                         stopbits=serial.STOPBITS_ONE,
                                         bytesize=serial.EIGHTBITS, timeout=5)
-        self.post_info = post_info
-        self.post_plot = post_plot
+        self.wnd = wnd
         self.update = False
         self.line = None
         self.on = True
@@ -56,7 +55,7 @@ class PiCom:
             self.serialport = None
 
     def __listen_loop(self):
-        self.post_info("Start loop!")
+        self.wnd.append_info("Start loop!")
         while self.on:
             try:
                 bts = self.serialport.readline().decode('utf-8')
@@ -65,12 +64,12 @@ class PiCom:
                 print(bts)
                 j = json.loads(bts)
                 if 'info' in j:
-                    self.post_info(j["info"])
+                    self.wnd.append_info(j["info"])
                 if 'cmd' in j:
                     print("Command = " + j['cmd'])
                     if j["cmd"] == "getline" and 'value' in j:
                         print(j['value'])
-                        self.post_plot(j["value"])
+                        self.wnd.update_plot(j["value"])
                         if self.update:
                             self.ask_data()
 

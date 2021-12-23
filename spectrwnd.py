@@ -34,6 +34,11 @@ class SpectrWnd(tk.Tk):
 
         self.picom = None
 
+        self.info_queue = queue.Queue()
+        self.data_queue = queue.Queue()
+
+        self.bind('<<MessageInfo>>', lambda e: self.do_append_info(e))
+
         self.title("pyColorApp")
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
@@ -59,16 +64,11 @@ class SpectrWnd(tk.Tk):
         self.frame_pl.grid(row=0, column=2, sticky="nsew")
         self.frame_pl.restore()
 
-        self.info_queue = queue.Queue()
-        self.data_queue = queue.Queue()
-
-        self.bind('<<MessageInfo>>', self.do_append_info)
-
     def list_ports(self):
         return PiCom.list_ports()
 
     def clicked_open(self):
-        self.picom = PiCom(self.frame_control.get_port(), self.append_info, self.update_plot)
+        self.picom = PiCom(self.frame_control.get_port(), self)
 
     def clicked_close(self):
         if self.picom:
@@ -104,7 +104,7 @@ class SpectrWnd(tk.Tk):
 
     def append_info(self, txt):
         self.info_queue.put(txt)
-        self.event_generate('<<MessageInfo>>')
+        self.event_generate('<<MessageInfo>>', when="tail")
 
     def update_plot(self, data):
         self.frame_info.append_info("Data " + str(len(data)) + '\n')

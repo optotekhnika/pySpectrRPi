@@ -151,10 +151,15 @@ class PlotListWnd(tk.Frame):
         h5file.close()
 
     def restore(self):
-        h5file = pt.open_file("spw.h5", mode="r", title="spectrum")
-        table = h5file.root.simple.sp
-        for pl in table.iterrows():
-            p, c = self.spwnd.add_plot(pl['x'], pl['y'])
-            self.add_plot(p, c, pl['comment'])
-        h5file.close()
+        try:
+            h5file = pt.open_file("spw.h5", mode="r", title="spectrum")
+            table = h5file.root.simple.sp
+            for pl in table.iterrows():
+                p, c = self.spwnd.add_plot(pl['x'], pl['y'])
+                self.add_plot(p, c, pl['comment'])
+            h5file.close()
+        except ValueError:
+            pass
+        except OSError:
+            print("Cannot open file")
 
