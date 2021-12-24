@@ -23,6 +23,7 @@ SOFTWARE.
 import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.backend_bases import MouseButton
 import matplotlib.colors as mc
 import numpy as np
 
@@ -34,6 +35,15 @@ def scale(data):
     l = l - d
     h = h + d
     return l, h
+
+
+class MouseDrag:
+    def __init__(self):
+        self.vertical = False
+        self.stretch = False
+        self.on = False
+        self.x0 = 0
+        self.y0 = 0
 
 
 class PlotFrame(tk.Frame):
@@ -60,8 +70,14 @@ class PlotFrame(tk.Frame):
         button_ascale.pack(side="left")
         toolbar.update()
 
+        binding_id = self.fig.canvas.mpl_connect('motion_notify_event', self.mouse_move)
+        self.fig.canvas.mpl_connect('button_press_event', self.mouse_press)
+        self.fig.canvas.mpl_connect('button_release_event', self.mouse_release)
+
         self.fig.tight_layout(pad=1.0)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
+
+        self.mdrag = MouseDrag()
 
     def clicked_expand(self):
         l, h = self.aplot.get_ylim()
@@ -119,3 +135,59 @@ class PlotFrame(tk.Frame):
 
     def xy_plot(self, plot):
         return plot.get_data()
+
+    def mouse_press(self, event):
+        if event.inaxes:
+            return
+        if event.button == MouseButton.LEFT:
+            self.mdrag.stretch = False
+        elif event.button == MouseButton.RIGHT:
+            self.mdrag.stretch = True
+        else:
+            return
+        xf, yf = self.fig.transFigure.inverted().transform((event.x, event.y))
+        apos = self.aplot.get_position()
+        if xf < apos.x0:
+            self.mdrag.vertical = True
+        elif yf < apos.y0:
+            self.mdrag.vertical = False
+        self.mdrag.on = True
+        xd, yd = self.aplot.transData.inverted().transform((event.x, event.y))
+        xa, ya = self.aplot.transAxes.inverted().transform((event.x, event.y))
+        self.mdrag.x0 = xd
+        self.mdrag.y0 = yd
+        print(xd, yd, xa, ya)
+
+    def mouse_release(self, event):
+        self.mdrag.on = False
+
+    def mouse_move(self, event):
+        if not self.mdrag.on:
+            return
+        if event.inaxes:
+            return
+        x, y = event.x, event.y
+        xd, yd = self.aplot.transData.inverted().transform((event.x, event.y))
+        xa, ya = self.aplot.transAxes.inverted().transform((event.x, event.y))
+        if event.button == MouseButton.LEFT:
+            if self.mdrag.vertical:
+                l, h = self.aplot.get_ylim()
+                d = self.mdrag.y0 - yd
+                self.aplot.set_ylim([l + d, h + d])
+                self.canvas.draw()
+            else:
+                l, h = self.aplot.get_xlim()
+                d = self.mdrag.x0 - xd
+                self.aplot.set_xlim([l + d, h + d])
+                self.canvas.draw()
+        elif event.button == MouseButton.RIGHT:
+            if self.mdrag.vertical:
+                l, h = self.aplot.get_ylim()
+                h = l + (self.mdrag.y0 - l) / ya
+                self.aplot.set_ylim([l, h])
+                self.canvas.draw()
+            else:
+                l, h = self.aplot.get_xlim()
+                h = l + (self.mdrag.x0 - l) / xa
+                self.aplot.set_xlim([l, h])
+                self.canvas.draw()
