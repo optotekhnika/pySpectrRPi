@@ -26,6 +26,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.backend_bases import MouseButton
 import matplotlib.colors as mc
 import numpy as np
+from matplotlib.lines import Line2D
 
 
 def scale(data):
@@ -46,12 +47,45 @@ class MouseDrag:
         self.y0 = 0
 
 
+class PickCursor:
+    def __init__(self):
+        self.line = None
+        self.ind = None
+        self.lineShift = None
+        self.indShift = None
+
+    def set_cursor(self, line, ind):
+        if self.lineShift == self.line and self.line:
+            self.lineShift.set_markevery([self.indShift])
+        elif self.line:
+            self.line.set_markevery([])
+        if self.lineShift == line:
+            line.set_markevery([ind, self.indShift])
+        else:
+            line.set_markevery([ind])
+        self.line = line
+        self.ind = ind
+
+    def set_cursor_shift(self, line, ind):
+        if self.lineShift == self.line and self.line:
+            self.line.set_markevery([self.ind])
+        elif self.lineShift:
+            self.lineShift.set_markevery([])
+        if self.line == line:
+            line.set_markevery([ind, self.ind])
+        else:
+            line.set_markevery([ind])
+        self.lineShift = line
+        self.indShift = ind
+
+
 class PlotFrame(tk.Frame):
     def __init__(self, mainwnd):
         super().__init__(mainwnd, highlightthickness=1, highlightbackground="blue")
 
         self.line = None
         self.autoscale = False
+        self.cursors = PickCursor()
 
         self.fig = plt.Figure()
 
@@ -73,6 +107,7 @@ class PlotFrame(tk.Frame):
         binding_id = self.fig.canvas.mpl_connect('motion_notify_event', self.mouse_move)
         self.fig.canvas.mpl_connect('button_press_event', self.mouse_press)
         self.fig.canvas.mpl_connect('button_release_event', self.mouse_release)
+        self.fig.canvas.mpl_connect('pick_event', self.pick)
 
         self.fig.tight_layout(pad=1.0)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
@@ -98,11 +133,12 @@ class PlotFrame(tk.Frame):
 
     def start_plot(self):
         t = np.arange(0, 256, 1)
-        self.line = self.aplot.plot(t, 40000 * np.sin(2 * np.pi * t))[-1]
-        return self.line, mc.to_hex(self.line.get_color())
+        return self.add_plot(t, 40000 * np.sin(2 * np.pi * t))
 
     def add_plot(self, x, y):
-        self.line = self.aplot.plot(x, y)[-1]
+        self.line = self.aplot.plot(x, y, picker=True, marker='d', markevery=[])[-1]
+        self.line.set_markerfacecolor('black')
+        self.line.set_markersize(9)
         return self.line, mc.to_hex(self.line.get_color())
 
     def update_plot(self, data):
@@ -122,11 +158,11 @@ class PlotFrame(tk.Frame):
         self.aplot.set_xlim([l, h])
         self.canvas.draw()
 
-    def hide_plot(self, plot, hide):
+    def hide_plot(self, line, hide):
         if hide:
-            plot.set_linestyle("None")
+            line.set_linestyle("None")
         else:
-            plot.set_linestyle("solid")
+            line.set_linestyle("solid")
         self.canvas.draw()
 
     def del_plot(self, line):
@@ -153,10 +189,9 @@ class PlotFrame(tk.Frame):
             self.mdrag.vertical = False
         self.mdrag.on = True
         xd, yd = self.aplot.transData.inverted().transform((event.x, event.y))
-        xa, ya = self.aplot.transAxes.inverted().transform((event.x, event.y))
         self.mdrag.x0 = xd
         self.mdrag.y0 = yd
-        print(xd, yd, xa, ya)
+        print(xd, yd)
 
     def mouse_release(self, event):
         self.mdrag.on = False
@@ -167,8 +202,7 @@ class PlotFrame(tk.Frame):
         if event.inaxes:
             return
         x, y = event.x, event.y
-        xd, yd = self.aplot.transData.inverted().transform((event.x, event.y))
-        xa, ya = self.aplot.transAxes.inverted().transform((event.x, event.y))
+        xd, yd = self.aplot.transData.inverted().transform((x, y))
         if event.button == MouseButton.LEFT:
             if self.mdrag.vertical:
                 l, h = self.aplot.get_ylim()
@@ -181,6 +215,7 @@ class PlotFrame(tk.Frame):
                 self.aplot.set_xlim([l + d, h + d])
                 self.canvas.draw()
         elif event.button == MouseButton.RIGHT:
+            xa, ya = self.aplot.transAxes.inverted().transform((x, y))
             if self.mdrag.vertical:
                 l, h = self.aplot.get_ylim()
                 h = l + (self.mdrag.y0 - l) / ya
@@ -190,4 +225,16 @@ class PlotFrame(tk.Frame):
                 l, h = self.aplot.get_xlim()
                 h = l + (self.mdrag.x0 - l) / xa
                 self.aplot.set_xlim([l, h])
+                self.canvas.draw()
+
+    def pick(self, event):
+        if isinstance(event.artist, Line2D):
+            thisline = event.artist
+            ind = event.ind
+            n = len(ind)
+            if n > 0:
+                if event.mouseevent.key == 'shift':
+                    self.cursors.set_cursor_shift(thisline, ind[int(n/2)])
+                else:
+                    self.cursors.set_cursor(thisline, ind[int(n / 2)])
                 self.canvas.draw()
