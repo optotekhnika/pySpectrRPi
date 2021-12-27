@@ -20,12 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import numpy as np
 import tkinter as tk
 from pycom import PiCom
 import frames as fr
 import plotwnd as pw
 import plotlistwnd as pl
 import queue
+import calibratedlg as cdlg
 
 
 class SpectrWnd(tk.Tk):
@@ -90,6 +92,17 @@ class SpectrWnd(tk.Tk):
         if self.picom:
             self.picom.set_time(self.frame_control.get_time())
 
+    def clicked_calibrate(self):
+        d = cdlg.CalibrateDlg(self)
+        if d.result:
+            x = self.frame_plot.x_marked()
+            cm1, cm2, nm1, nm2 = d.result
+            ind1 = (np.abs(x - cm1)).argmin()
+            ind2 = (np.abs(x - cm2)).argmin()
+            dl = (nm2 - nm1) / (ind2 - ind1)
+            l0 = nm2 - dl * ind2
+            print(dl, l0)
+
     def loop(self):
         self.mainloop()
 
@@ -109,3 +122,6 @@ class SpectrWnd(tk.Tk):
     def update_plot(self, data):
         self.frame_info.append_info("Data " + str(len(data)) + '\n')
         self.frame_plot.update_plot(data)
+
+    def get_markers(self):
+        return self.frame_plot.get_markers()

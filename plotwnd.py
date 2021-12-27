@@ -78,6 +78,27 @@ class PickCursor:
         self.lineShift = line
         self.indShift = ind
 
+    def delete(self, line):
+        if line == self.lineShift:
+            self.lineShift = None
+        if line == self.line:
+            self.line = None
+
+    def get_indx(self):
+        if self.line:
+            x, y = self.line.get_data()
+            a = x[self.ind]
+        else:
+            a = 0
+        if self.lineShift:
+            x, y = self.lineShift.get_data()
+            b = x[self.indShift]
+        else:
+            b = 0
+        if a < b:
+            return a, b
+        return b, a
+
 
 class PlotFrame(tk.Frame):
     def __init__(self, mainwnd):
@@ -166,11 +187,21 @@ class PlotFrame(tk.Frame):
         self.canvas.draw()
 
     def del_plot(self, line):
+        self.cursors.delete(line)
         self.aplot.lines.remove(line)
         self.canvas.draw()
 
     def xy_plot(self, plot):
         return plot.get_data()
+
+    def x_marked(self):
+        if self.cursors.line:
+            x, y = self.cursors.line.get_data()
+            return x
+        return None
+
+    def get_markers(self):
+        return self.cursors.get_indx()
 
     def mouse_press(self, event):
         if event.inaxes:

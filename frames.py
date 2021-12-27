@@ -56,6 +56,9 @@ class ToolFrame(tk.Frame):
         self.entTime = tk.Entry(self)
         self.entTime.grid(column=7, row=0, padx=4, pady=2)
 
+        self.btnCalibrate = tk.Button(self, text="Calibrate", command=mainwnd.clicked_calibrate)
+        self.btnCalibrate.grid(column=8, row=0, padx=4, pady=2)
+
     def get_port(self):
         self.lbl.configure(text="Opening {}".format(self.combo.get()))
         return self.combo.get()
